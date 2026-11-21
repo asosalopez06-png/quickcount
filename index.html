@@ -48,7 +48,7 @@ const total=it=>(it.cases===''&&it.loose==='')?null:n(it.cases)*n(it.upc)+n(it.l
 const flag=it=>{const t=total(it);if(t==null)return'';if(n(it.cases)>0&&!n(it.upc))return'need';if(it.last===''||it.last==null)return'';return Math.abs(t-n(it.last))>Math.max(3,.25*n(it.last))?'bad':'ok'};
 function parse(txt){
   return txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
-    const p=l.split(/\t|;|,(?=\s*\d+\s*(,|$))/).map(x=>x.trim());
+    const p=l.split(/\t|;|,(?=\s*\d+\s*(?:,|$))/).map(x=>x.trim());
     return{name:p[0],upc:p[1]&&!isNaN(+p[1])?+p[1]:'',last:p[2]&&!isNaN(+p[2])?+p[2]:'',cases:'',loose:'',skip:false};
   }).filter(x=>x.name&&!/^(product|item)$/i.test(x.name));
 }
