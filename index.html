@@ -45,18 +45,24 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const $=s=>document.querySelector(s);
 const n=v=>(v===''||v==null||isNaN(+v))?0:+v;
 const total=it=>(it.cases===''&&it.loose==='')?null:n(it.cases)*n(it.upc)+n(it.loose);
-const flag=it=>{const t=total(it);if(t==null)return'';if(n(it.cases)>0&&!n(it.upc))return'need';if(it.last===''||it.last==null)return'';return Math.abs(t-n(it.last))>Math.max(3,.25*n(it.last))?'bad':'ok'};
+const expected=it=>(it.last===''||it.last==null)?null:n(it.last)+n(it.recv);
+const flag=it=>{const t=total(it);if(t==null)return'';if(n(it.cases)>0&&!n(it.upc))return'need';const e=expected(it);if(e==null)return'';return t>e+Math.max(3,.25*e)?'bad':'ok'};
+const usage=it=>{const t=total(it),e=expected(it);return(t==null||e==null)?null:e-t};
+const orderQty=it=>{const t=total(it);if(t==null||it.par==='')return 0;const need=Math.max(0,n(it.par)-t);return n(it.upc)>1?Math.ceil(need/n(it.upc)):need};
 function parse(txt){
+  const num=x=>x!==undefined&&x!==''&&!isNaN(+x)?+x:'';
   return txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
-    const p=l.split(/\t|;|,(?=\s*\d+\s*(?:,|$))/).map(x=>x.trim());
-    return{name:p[0],upc:p[1]&&!isNaN(+p[1])?+p[1]:'',last:p[2]&&!isNaN(+p[2])?+p[2]:'',cases:'',loose:'',skip:false};
+    // Full format (paste from Excel, tab-separated): name, units per case, last count, par, supplier
+    // Short format (commas): name, units per case, last count
+    const p=l.includes('\t')?l.split('\t').map(x=>x.trim()):l.split(/;|,(?=\s*\d+\s*(?:,|$))/).map(x=>x.trim());
+    return{name:p[0],upc:num(p[1]),last:num(p[2]),par:num(p[3]),sup:(p[4]||'').trim(),recv:'',cases:'',loose:'',skip:false};
   }).filter(x=>x.name&&!/^(product|item)$/i.test(x.name));
 }
 function setup(){
   $('#app').innerHTML=`<h1>Quick Count</h1>
   <p class="mute">Your list stays on this phone only. Nothing is sent anywhere.</p>
   <div class="card"><b>1. Paste your product list</b>
-  <p class="mute">One product per line, in the order you walk the shelves. Optional: add units per case and last count, separated by a comma or tab (you can copy straight from Excel).<br>Example: <i>Boréale, 24, 80</i></p>
+  <p class="mute">One product per line, in the order you walk the shelves. Optional extras. Short form: <i>Boréale, 24, 80</i> (units per case, last count). Full form, copied from Excel columns: name, units per case, last count, par (how many you want on hand), supplier.</p>
   <textarea id="txt" placeholder="Boréale, 24, 80&#10;Heineken, 24&#10;Don Simon 1L rouge, 6"></textarea>
   <div class="bar"><button id="imp">Load list</button><label class="btn alt">Load CSV file<input type="file" id="f" accept=".csv,.txt" hidden></label></div></div>
   ${S.items.length?`<div class="card"><b>${S.items.length} products loaded</b><div class="bar"><button id="go">Continue counting</button><button class="alt" id="clr">Clear counts</button><button class="bad" id="del">Delete list</button></div></div>`:''}`;
@@ -75,7 +81,8 @@ function count(){
   $('#app').innerHTML=`<div class="bar"><button class="alt" id="menu">☰ Menu</button><button class="alt" id="list">List</button><button class="alt" id="exp">Finish</button></div>
   <div class="mute">${S.i+1} of ${L.length} · ${done} done</div><div class="prog"><i style="width:${100*done/L.length}%"></i></div>
   <div class="card"><div class="name">${esc(it.name)}</div>
-  ${it.last!==''?`<div class="mute">Last count: ${it.last}</div>`:''}
+  ${it.last!==''?`<div class="mute">Last count: ${it.last}${it.par!==''?' · Par: '+it.par:''}${it.sup?' · '+esc(it.sup):''}</div>`:(it.sup?`<div class="mute">${esc(it.sup)}</div>`:'')}
+  <div class="row"><label>Received this week</label><div class="step"><input id="recv" type="number" inputmode="numeric" value="${it.recv}" placeholder="0"></div></div>
   <div class="row"><label>Units per case</label><div class="step"><input id="upc" type="number" inputmode="numeric" value="${it.upc}" placeholder="24"></div></div>
   <div class="row"><label>Cases</label><div class="step"><button data-f="cases" data-d="-1">−</button><input id="cases" type="number" inputmode="numeric" value="${it.cases}" placeholder="0"><button data-f="cases" data-d="1">+</button></div></div>
   <div class="row"><label>Loose</label><div class="step"><button data-f="loose" data-d="-1">−</button><input id="loose" type="number" inputmode="numeric" value="${it.loose}" placeholder="0"><button data-f="loose" data-d="1">+</button></div></div>
@@ -83,15 +90,15 @@ function count(){
   <div id="fl">${fl(f)}</div>
   <div class="bar"><button class="alt" id="zero">Zero (none on shelf)</button><button class="alt" id="skip">Don't carry</button></div></div>
   <div class="nav"><button class="alt" id="prev">‹ Back</button><button id="next">Next ›</button></div>`;
-  const upd=()=>{it.upc=$('#upc').value;it.cases=$('#cases').value;it.loose=$('#loose').value;save();$('#tot').textContent=total(it)==null?'–':total(it);$('#fl').innerHTML=fl(flag(it))};
-  ['upc','cases','loose'].forEach(id=>$('#'+id).oninput=upd);
+  const upd=()=>{it.upc=$('#upc').value;it.recv=$('#recv').value;it.cases=$('#cases').value;it.loose=$('#loose').value;save();$('#tot').textContent=total(it)==null?'–':total(it);$('#fl').innerHTML=fl(flag(it))};
+  ['upc','recv','cases','loose'].forEach(id=>$('#'+id).oninput=upd);
   document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{const e=$('#'+b.dataset.f);e.value=Math.max(0,n(e.value)+ +b.dataset.d);upd()});
   $('#zero').onclick=()=>{it.cases='0';it.loose='0';save();go(1)};
   $('#skip').onclick=()=>{it.skip=true;save();go(1)};
   $('#next').onclick=()=>go(1);$('#prev').onclick=()=>go(-1);
   $('#menu').onclick=()=>{S.view='setup';render()};$('#list').onclick=()=>{S.view='list';render()};$('#exp').onclick=()=>{S.view='done';render()};
 }
-const fl=f=>f==='bad'?'<div class="flag bad">Far from last count: RECOUNT</div>':f==='need'?'<div class="flag bad">Fill units per case</div>':f==='ok'?'<div class="flag ok">Matches last count ✓</div>':'';
+const fl=f=>f==='bad'?'<div class="flag bad">More than expected (last + received): RECOUNT</div>':f==='need'?'<div class="flag bad">Fill units per case</div>':f==='ok'?'<div class="flag ok">Looks right ✓</div>':'';
 function go(d){S.i+=d;if(S.i>=S.items.length){S.i=S.items.length-1;S.view='done'}save();render()}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function list(){
@@ -112,12 +119,19 @@ function done(){
   <div class="card"><b>Copy your totals</b><p class="mute">Paste into Excel, Notes, or write them on the paper sheet.</p>
   <div class="bar"><button id="copy">Copy product + total</button><button class="alt" id="csv">Download CSV</button></div>
   <button class="alt" id="last" style="margin-top:6px">Save these as "last count" for next time</button></div>
+  <div class="card"><b>Order list (par − counted)</b><p class="mute">Needs par numbers in your list. Shown by supplier, in cases when units per case is set.</p>${orderHtml(rows)}<div class="bar"><button class="alt" id="copyo">Copy order list</button></div></div>
+  <div class="card"><b>Used since last count</b>${rows.filter(x=>usage(x)!=null).map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${usage(x)}</b></div>`).join('')||'<p class="mute">Shows once you have a last count.</p>'}</div>
   <div class="card"><b>Totals (for the paper sheet)</b>${rows.map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${total(x)==null?'–':total(x)}</b></div>`).join('')}</div>`;
   $('#back').onclick=()=>{S.view='count';render()};
   $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(txt);alert('Copied')}catch(e){prompt('Copy this:',txt)}};
+  $('#copyo').onclick=async()=>{const t=orderText(rows);try{await navigator.clipboard.writeText(t);alert('Copied')}catch(e){prompt('Copy this:',t)}};
   $('#csv').onclick=()=>{const b=new Blob(['Product,Total\n'+rows.map(x=>'"'+x.name.replace(/"/g,'""')+'",'+(total(x)==null?'':total(x))).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='count-'+new Date().toISOString().slice(0,10)+'.csv';a.click()};
-  $('#last').onclick=()=>{if(confirm('Save totals as last count and clear this count?')){S.items.forEach(x=>{const t=total(x);if(t!=null)x.last=t;x.cases='';x.loose=''});S.i=0;S.view='count';save();render()}};
+  $('#last').onclick=()=>{if(confirm('Save totals as last count and clear this count?')){S.items.forEach(x=>{const t=total(x);if(t!=null)x.last=t;x.cases='';x.loose='';x.recv=''});S.i=0;S.view='count';save();render()}};
 }
+function groups(rows){const g={};rows.forEach(x=>{const q=orderQty(x);if(q>0)(g[x.sup||'No supplier']=g[x.sup||'No supplier']||[]).push([x,q])});return g}
+function unit(x){return n(x.upc)>1?'case(s)':'unit(s)'}
+function orderHtml(rows){const g=groups(rows);const k=Object.keys(g);return k.length?k.map(s=>`<p><b>${esc(s)}</b></p>`+g[s].map(([x,q])=>`<div class="li"><span>${esc(x.name)}</span><b>${q} ${unit(x)}</b></div>`).join('')).join(''):'<p class="mute">Nothing to order (or no par numbers yet).</p>'}
+function orderText(rows){const g=groups(rows);return Object.keys(g).map(s=>s+'\n'+g[s].map(([x,q])=>x.name+'\t'+q+' '+unit(x)).join('\n')).join('\n\n')}
 function render(){({setup,count,list,done})[S.view]()}
 render();
 </script></body></html>
