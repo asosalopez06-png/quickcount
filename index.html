@@ -55,14 +55,14 @@ function parse(txt){
     // Full format (paste from Excel, tab-separated): name, units per case, last count, par, supplier
     // Short format (commas): name, units per case, last count
     const p=l.includes('\t')?l.split('\t').map(x=>x.trim()):l.split(/;|,(?=\s*\d+\s*(?:,|$))/).map(x=>x.trim());
-    return{name:p[0],upc:num(p[1]),last:num(p[2]),par:num(p[3]),sup:(p[4]||'').trim(),note:(p[5]||'').trim(),recv:'',cases:'',loose:'',skip:false};
+    return{name:p[0],upc:num(p[1]),last:num(p[2]),par:num(p[3]),sup:(p[4]||'').trim(),note:(p[5]||'').trim(),sec:(p[6]||'').trim(),recv:'',cases:'',loose:'',skip:false};
   }).filter(x=>x.name&&!/^(product|item)$/i.test(x.name));
 }
 function setup(){
   $('#app').innerHTML=`<h1>Quick Count</h1>
   <p class="mute">Your list stays on this phone only. Nothing is sent anywhere.</p>
   <div class="card"><b>1. Paste your product list</b>
-  <p class="mute">One product per line, in the order you walk the shelves. Optional extras. Short form: <i>Boréale, 24, 80</i> (units per case, last count). Full form, copied from Excel columns: name, units per case, last count, par (how many you want on hand), supplier, order deadline note.</p>
+  <p class="mute">One product per line, in the order you walk the shelves. Optional extras. Short form: <i>Boréale, 24, 80</i> (units per case, last count). Full form, copied from Excel columns: name, units per case, last count, par (how many you want on hand), supplier, order deadline note, section (wine, beer...).</p>
   <textarea id="txt" placeholder="Boréale, 24, 80&#10;Heineken, 24&#10;Don Simon 1L rouge, 6"></textarea>
   <div class="bar"><button id="imp">Load list</button><label class="btn alt">Load CSV file<input type="file" id="f" accept=".csv,.txt" hidden></label></div></div>
   ${S.items.length?`<div class="card"><b>${S.items.length} products loaded</b><div class="bar"><button id="go">Continue counting</button><button class="alt" id="clr">Clear counts</button><button class="bad" id="del">Delete list</button></div></div>`:''}`;
@@ -80,7 +80,7 @@ function count(){
   const t=total(it),f=flag(it);
   $('#app').innerHTML=`<div class="bar"><button class="alt" id="menu">☰ Menu</button><button class="alt" id="list">List</button><button class="alt" id="exp">Finish</button></div>
   <div class="mute">${S.i+1} of ${L.length} · ${done} done</div><div class="prog"><i style="width:${100*done/L.length}%"></i></div>
-  <div class="card"><div class="name">${esc(it.name)}</div>
+  <div class="card">${it.sec?`<div class="mute">${esc(it.sec)}</div>`:''}<div class="name">${esc(it.name)}</div>
   ${it.last!==''?`<div class="mute">Last count: ${it.last}${it.par!==''?' · Par: '+it.par:''}${it.sup?' · '+esc(it.sup):''}</div>`:(it.sup?`<div class="mute">${esc(it.sup)}</div>`:'')}
   <div class="row"><label>Received this week</label><div class="step"><input id="recv" type="number" inputmode="numeric" value="${it.recv}" placeholder="0"></div></div>
   <div class="row"><label>Units per case</label><div class="step"><input id="upc" type="number" inputmode="numeric" value="${it.upc}" placeholder="24"></div></div>
@@ -104,14 +104,19 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function list(){
   $('#app').innerHTML=`<div class="bar"><button class="alt" id="back">‹ Counting</button></div><input type="search" id="q" placeholder="Search product">
   <div id="ls"></div>`;
-  const draw=()=>{const q=$('#q').value.toLowerCase();$('#ls').innerHTML=S.items.map((it,i)=>({it,i})).filter(o=>o.it.name.toLowerCase().includes(q)).map(({it,i})=>{const t=total(it);return`<div class="li" data-i="${i}"><span>${esc(it.name)}${it.skip?' <span class=mute>(not carried)</span>':''}${flag(it)==='bad'?' ⚠️':''}</span><b>${it.skip?'':t==null?'–':t}</b></div>`}).join('');
-    document.querySelectorAll('.li').forEach(e=>e.onclick=()=>{S.i=+e.dataset.i;S.items[S.i].skip=false;S.view='count';save();render()})};
+  const draw=()=>{const q=$('#q').value.toLowerCase();let html='',cur=null;
+    const stat={};S.items.forEach(x=>{const k=x.sec||'';stat[k]=stat[k]||[0,0];if(!x.skip){stat[k][1]++;if(total(x)!=null)stat[k][0]++}});
+    S.items.forEach((it,i)=>{if(!it.name.toLowerCase().includes(q))return;const k=it.sec||'';
+      if(k!==cur){cur=k;if(k)html+=`<div class="li" style="background:var(--card);font-weight:700"><span>${esc(k)}</span><span class="mute">${stat[k][0]}/${stat[k][1]} done</span></div>`}
+      const t=total(it);html+=`<div class="li" data-i="${i}"><span>${esc(it.name)}${it.skip?' <span class=mute>(not carried)</span>':''}${flag(it)==='bad'?' ⚠️':''}</span><b>${it.skip?'':t==null?'–':t}</b></div>`});
+    $('#ls').innerHTML=html;
+    document.querySelectorAll('.li[data-i]').forEach(e=>e.onclick=()=>{S.i=+e.dataset.i;S.items[S.i].skip=false;S.view='count';save();render()})};
   $('#q').oninput=draw;draw();$('#back').onclick=()=>{S.view='count';render()};
 }
 function done(){
   const rows=S.items.filter(x=>!x.skip);
   const missing=rows.filter(x=>total(x)==null),recount=rows.filter(x=>flag(x)==='bad'||flag(x)==='need');
-  const txt=rows.map(x=>x.name+'\t'+(total(x)==null?'':total(x))).join('\n');
+  const txt=bySec(rows).map(([k,xs])=>(k?k+'\n':'')+xs.map(x=>x.name+'\t'+(total(x)==null?'':total(x))).join('\n')).join('\n\n');
   $('#app').innerHTML=`<div class="bar"><button class="alt" id="back">‹ Counting</button></div><h1>Finish</h1>
   <div class="card">${missing.length?`<div class="flag bad">${missing.length} not counted yet</div>`:'<div class="flag ok">Everything counted ✓</div>'}
   ${recount.length?`<p><b>Recount these:</b><br>${recount.map(x=>esc(x.name)).join('<br>')}</p>`:''}
@@ -121,13 +126,14 @@ function done(){
   <button class="alt" id="last" style="margin-top:6px">Save these as "last count" for next time</button></div>
   <div class="card"><b>Order list (par − counted)</b><p class="mute">Needs par numbers in your list. Shown by supplier, in cases when units per case is set.</p>${orderHtml(rows)}<div class="bar"><button class="alt" id="copyo">Copy order list</button></div></div>
   <div class="card"><b>Used since last count</b>${rows.filter(x=>usage(x)!=null).map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${usage(x)}</b></div>`).join('')||'<p class="mute">Shows once you have a last count.</p>'}</div>
-  <div class="card"><b>Totals (for the paper sheet)</b>${rows.map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${total(x)==null?'–':total(x)}</b></div>`).join('')}</div>`;
+  <div class="card"><b>Totals (for the paper sheet)</b>${bySec(rows).map(([k,xs])=>(k?`<p><b>${esc(k)}</b></p>`:'')+xs.map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${total(x)==null?'–':total(x)}</b></div>`).join('')).join('')}</div>`;
   $('#back').onclick=()=>{S.view='count';render()};
   $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(txt);alert('Copied')}catch(e){prompt('Copy this:',txt)}};
   $('#copyo').onclick=async()=>{const t=orderText(rows);try{await navigator.clipboard.writeText(t);alert('Copied')}catch(e){prompt('Copy this:',t)}};
   $('#csv').onclick=()=>{const b=new Blob(['Product,Total\n'+rows.map(x=>'"'+x.name.replace(/"/g,'""')+'",'+(total(x)==null?'':total(x))).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='count-'+new Date().toISOString().slice(0,10)+'.csv';a.click()};
   $('#last').onclick=()=>{if(confirm('Save totals as last count and clear this count?')){S.items.forEach(x=>{const t=total(x);if(t!=null)x.last=t;x.cases='';x.loose='';x.recv=''});S.i=0;S.view='count';save();render()}};
 }
+function bySec(rows){const o=[],m={};rows.forEach(x=>{const k=x.sec||'';if(!(k in m)){m[k]=[];o.push([k,m[k]])}m[k].push(x)});return o}
 function groups(rows){const g={};rows.forEach(x=>{const q=orderQty(x);if(q>0)(g[x.sup||'No supplier']=g[x.sup||'No supplier']||[]).push([x,q])});return g}
 function unit(x){return n(x.upc)>1?'case(s)':'unit(s)'}
 function orderHtml(rows){const g=groups(rows);const k=Object.keys(g);return k.length?k.map(s=>`<p><b>${esc(s)}</b>${(g[s][0][0].note)?`<br><span class=mute>⏰ ${esc(g[s][0][0].note)}</span>`:''}</p>`+g[s].map(([x,q])=>`<div class="li"><span>${esc(x.name)}</span><b>${q} ${unit(x)}</b></div>`).join('')).join(''):'<p class="mute">Nothing to order (or no par numbers yet).</p>'}
