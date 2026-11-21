@@ -55,14 +55,14 @@ function parse(txt){
     // Full format (paste from Excel, tab-separated): name, units per case, last count, par, supplier
     // Short format (commas): name, units per case, last count
     const p=l.includes('\t')?l.split('\t').map(x=>x.trim()):l.split(/;|,(?=\s*\d+\s*(?:,|$))/).map(x=>x.trim());
-    return{name:p[0],upc:num(p[1]),last:num(p[2]),par:num(p[3]),sup:(p[4]||'').trim(),recv:'',cases:'',loose:'',skip:false};
+    return{name:p[0],upc:num(p[1]),last:num(p[2]),par:num(p[3]),sup:(p[4]||'').trim(),note:(p[5]||'').trim(),recv:'',cases:'',loose:'',skip:false};
   }).filter(x=>x.name&&!/^(product|item)$/i.test(x.name));
 }
 function setup(){
   $('#app').innerHTML=`<h1>Quick Count</h1>
   <p class="mute">Your list stays on this phone only. Nothing is sent anywhere.</p>
   <div class="card"><b>1. Paste your product list</b>
-  <p class="mute">One product per line, in the order you walk the shelves. Optional extras. Short form: <i>Boréale, 24, 80</i> (units per case, last count). Full form, copied from Excel columns: name, units per case, last count, par (how many you want on hand), supplier.</p>
+  <p class="mute">One product per line, in the order you walk the shelves. Optional extras. Short form: <i>Boréale, 24, 80</i> (units per case, last count). Full form, copied from Excel columns: name, units per case, last count, par (how many you want on hand), supplier, order deadline note.</p>
   <textarea id="txt" placeholder="Boréale, 24, 80&#10;Heineken, 24&#10;Don Simon 1L rouge, 6"></textarea>
   <div class="bar"><button id="imp">Load list</button><label class="btn alt">Load CSV file<input type="file" id="f" accept=".csv,.txt" hidden></label></div></div>
   ${S.items.length?`<div class="card"><b>${S.items.length} products loaded</b><div class="bar"><button id="go">Continue counting</button><button class="alt" id="clr">Clear counts</button><button class="bad" id="del">Delete list</button></div></div>`:''}`;
@@ -130,8 +130,8 @@ function done(){
 }
 function groups(rows){const g={};rows.forEach(x=>{const q=orderQty(x);if(q>0)(g[x.sup||'No supplier']=g[x.sup||'No supplier']||[]).push([x,q])});return g}
 function unit(x){return n(x.upc)>1?'case(s)':'unit(s)'}
-function orderHtml(rows){const g=groups(rows);const k=Object.keys(g);return k.length?k.map(s=>`<p><b>${esc(s)}</b></p>`+g[s].map(([x,q])=>`<div class="li"><span>${esc(x.name)}</span><b>${q} ${unit(x)}</b></div>`).join('')).join(''):'<p class="mute">Nothing to order (or no par numbers yet).</p>'}
-function orderText(rows){const g=groups(rows);return Object.keys(g).map(s=>s+'\n'+g[s].map(([x,q])=>x.name+'\t'+q+' '+unit(x)).join('\n')).join('\n\n')}
+function orderHtml(rows){const g=groups(rows);const k=Object.keys(g);return k.length?k.map(s=>`<p><b>${esc(s)}</b>${(g[s][0][0].note)?`<br><span class=mute>⏰ ${esc(g[s][0][0].note)}</span>`:''}</p>`+g[s].map(([x,q])=>`<div class="li"><span>${esc(x.name)}</span><b>${q} ${unit(x)}</b></div>`).join('')).join(''):'<p class="mute">Nothing to order (or no par numbers yet).</p>'}
+function orderText(rows){const g=groups(rows);return Object.keys(g).map(s=>s+(g[s][0][0].note?' ('+g[s][0][0].note+')':'')+'\n'+g[s].map(([x,q])=>x.name+'\t'+q+' '+unit(x)).join('\n')).join('\n\n')}
 function render(){({setup,count,list,done})[S.view]()}
 render();
 </script></body></html>
