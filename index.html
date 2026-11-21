@@ -5,35 +5,44 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Quick Count</title>
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--ink:#14171c;--mute:#6b7280;--acc:#1f6feb;--ok:#1a7f37;--bad:#c62828;--line:#e3e6ea}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1114;--card:#1a1d22;--ink:#f1f3f5;--mute:#9aa3ad;--line:#2b3037}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 16px 90px}
-h1{font-size:20px;margin:14px 0 4px}
+:root{--bg:#eef1f5;--card:#fff;--ink:#0f1720;--mute:#64707d;--acc:#0b6bcb;--acc2:#0a58a8;--ok:#13795b;--bad:#c0392b;--line:#dde3ea;--chip:#e8f0fa;--shadow:0 1px 2px rgba(15,23,32,.06),0 6px 20px rgba(15,23,32,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--card:#161c24;--ink:#eef2f6;--mute:#93a0ad;--line:#27303a;--chip:#1e2b3b;--shadow:0 1px 2px rgba(0,0,0,.4)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;padding:max(12px,env(safe-area-inset-top)) 16px 110px}
+#app{max-width:760px;margin:0 auto}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 6px}h3{margin:18px 0 6px}
 .bar{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
-button,.btn{font:inherit;border:0;border-radius:12px;padding:12px 16px;background:var(--acc);color:#fff;font-weight:600}
-button.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button,.btn{font:inherit;font-weight:650;border:0;border-radius:14px;padding:14px 18px;background:var(--acc);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.08);min-height:48px}
+button:active{transform:scale(.98);background:var(--acc2)}
+button.alt{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none}
 button.bad{background:var(--bad)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:10px 0}
-.name{font-size:24px;font-weight:700;line-height:1.2;margin:4px 0 12px}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0}
-.row label{font-weight:600;min-width:90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin:12px 0;box-shadow:var(--shadow)}
+.name{font-size:28px;font-weight:750;line-height:1.15;letter-spacing:-.4px;margin:6px 0 14px}
+.chipsec{display:inline-block;background:var(--chip);color:var(--acc);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-radius:999px;padding:5px 12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0}
+.row label{font-weight:650;min-width:120px}
 .step{display:flex;align-items:center;gap:8px}
-.step button{width:56px;height:56px;font-size:28px;padding:0;background:var(--card);color:var(--ink);border:1px solid var(--line)}
-.step input{width:84px;height:56px;font-size:26px;text-align:center;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-.total{font-size:44px;font-weight:800;text-align:center;margin:8px 0}
-.flag{text-align:center;font-weight:700;padding:8px;border-radius:10px}
-.flag.bad{background:#fde2e2;color:var(--bad)}.flag.ok{color:var(--ok)}
-.mute{color:var(--mute);font-size:14px}
-textarea{width:100%;min-height:150px;font:15px ui-monospace,monospace;border-radius:12px;border:1px solid var(--line);padding:10px;background:var(--card);color:var(--ink)}
-.prog{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin:8px 0}
-.prog i{display:block;height:100%;background:var(--acc)}
-.nav{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);display:flex;gap:8px}
-.nav button{flex:1;padding:16px}
-.li{display:flex;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line)}
-.li b{font-variant-numeric:tabular-nums}
+.step button{width:64px;height:64px;font-size:30px;padding:0;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:none}
+.step input{width:96px;height:64px;font-size:30px;font-weight:700;text-align:center;border-radius:16px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.step input:focus{outline:none;border-color:var(--acc)}
+.quick{display:flex;gap:8px;justify-content:flex-end;margin:-6px 0 6px}
+.quick button{min-height:40px;padding:6px 14px;font-size:16px;background:var(--chip);color:var(--acc);box-shadow:none;border-radius:999px}
+.total{font-size:64px;font-weight:800;text-align:center;margin:10px 0 4px;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.totlab{text-align:center;color:var(--mute);font-size:13px;text-transform:uppercase;letter-spacing:.6px}
+.flag{text-align:center;font-weight:700;padding:10px;border-radius:12px;margin:8px 0}
+.flag.bad{background:#fde7e4;color:var(--bad)}.flag.ok{background:#e4f5ee;color:var(--ok)}
+.mute{color:var(--mute);font-size:15px}
+textarea{width:100%;min-height:150px;font:15px ui-monospace,monospace;border-radius:14px;border:1px solid var(--line);padding:12px;background:var(--card);color:var(--ink)}
+.prog{height:10px;background:var(--line);border-radius:10px;overflow:hidden;margin:8px 0 4px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#27b0a0);border-radius:10px;transition:width .25s}
+.nav{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:center}
+.nav button{flex:1;max-width:370px;padding:18px;font-size:20px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 6px;border-bottom:1px solid var(--line)}
+.li b{font-variant-numeric:tabular-nums;font-size:20px}
+input[type=search],input.txt,select{width:100%;font:inherit;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.top button{min-height:42px;padding:8px 14px;font-size:16px}
 .hide{display:none}
-input[type=search],input.txt{width:100%;font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 </style></head><body>
 <div id="app"></div>
 <script>
@@ -87,26 +96,33 @@ function setup(){
   if($('#del'))$('#del').onclick=()=>{if(confirm('Delete the whole list?')){S.items=[];save();render()}};
 }
 function live(){return S.items.filter(x=>!x.skip)}
+function secOptions(){const seen={};let o='<option value="">Jump to section…</option>';S.items.forEach((x,i)=>{const k=x.sec||'';if(k&&!(k in seen)){seen[k]=1;o+=`<option value="${i}">${esc(k)}</option>`}});return o}
 function count(){
   const L=S.items;if(!L.length){S.view='setup';return render()}
   S.i=Math.max(0,Math.min(S.i,L.length-1));const it=L[S.i];
   const done=L.filter(x=>x.skip||total(x)!=null).length;
   const t=total(it),f=flag(it);
-  $('#app').innerHTML=`<div class="bar"><button class="alt" id="menu">☰ Menu</button><button class="alt" id="list">List</button><button class="alt" id="exp">Finish</button><button id="tk">🎤 Talk</button></div>
-  <div class="mute">${S.i+1} of ${L.length} · ${done} done</div><div class="prog"><i style="width:${100*done/L.length}%"></i></div>
-  <div class="card">${it.sec?`<div class="mute">${esc(it.sec)}</div>`:''}<div class="name">${esc(it.name)}</div>
+  $('#app').innerHTML=`<div class="top"><button class="alt" id="menu">☰</button><select id="sj" style="flex:1;min-width:140px">${secOptions()}</select><button class="alt" id="list">List</button><button class="alt" id="exp">Finish</button><button id="tk">🎤 Talk</button></div>
+  <div class="mute" style="margin-top:6px">${S.i+1} of ${L.length} · ${done} done</div><div class="prog"><i style="width:${100*done/L.length}%"></i></div>
+  <div class="card">${it.sec?`<span class="chipsec">${esc(it.sec)}</span>`:''}<div class="name">${esc(it.name)}</div>
   ${it.last!==''?`<div class="mute">Last count: ${it.last}${it.par!==''?' · Par: '+it.par:''}${it.sup?' · '+esc(it.sup):''}</div>`:(it.sup?`<div class="mute">${esc(it.sup)}</div>`:'')}
+  <details style="margin:6px 0"><summary class="mute" style="padding:8px 0;cursor:pointer">More: units per case, received this week</summary>
   <div class="row"><label>Received this week</label><div class="step"><input id="recv" type="number" inputmode="numeric" value="${it.recv}" placeholder="0"></div></div>
   <div class="row"><label>Units per case</label><div class="step"><input id="upc" type="number" inputmode="numeric" value="${it.upc}" placeholder="24"></div></div>
+  </details>
   <div class="row"><label>Cases</label><div class="step"><button data-f="cases" data-d="-1">−</button><input id="cases" type="number" inputmode="numeric" value="${it.cases}" placeholder="0"><button data-f="cases" data-d="1">+</button></div></div>
+  <div class="quick">${[2,3,5,10].map(v=>`<button data-qf="cases" data-qv="${v}">+${v}</button>`).join('')}</div>
   <div class="row"><label>Loose</label><div class="step"><button data-f="loose" data-d="-1">−</button><input id="loose" type="number" inputmode="numeric" value="${it.loose}" placeholder="0"><button data-f="loose" data-d="1">+</button></div></div>
-  <div class="total" id="tot">${t==null?'–':t}</div>
+  <div class="quick">${[2,3,6,12].map(v=>`<button data-qf="loose" data-qv="${v}">+${v}</button>`).join('')}</div>
+  <div class="totlab">Total units</div><div class="total" id="tot">${t==null?'–':t}</div>
   <div id="fl">${fl(f)}</div>
   <div class="bar"><button class="alt" id="zero">Zero (none on shelf)</button><button class="alt" id="skip">Don't carry</button></div></div>
   <div class="nav"><button class="alt" id="prev">‹ Back</button><button id="next">Next ›</button></div>`;
   const upd=()=>{it.upc=$('#upc').value;it.recv=$('#recv').value;it.cases=$('#cases').value;it.loose=$('#loose').value;save();$('#tot').textContent=total(it)==null?'–':total(it);$('#fl').innerHTML=fl(flag(it))};
   ['upc','recv','cases','loose'].forEach(id=>$('#'+id).oninput=upd);
   document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{const e=$('#'+b.dataset.f);e.value=Math.max(0,n(e.value)+ +b.dataset.d);upd()});
+  document.querySelectorAll('[data-qf]').forEach(b=>b.onclick=()=>{const e=$('#'+b.dataset.qf);e.value=n(e.value)+ +b.dataset.qv;upd()});
+  $('#sj').onchange=()=>{const v=$('#sj').value;if(v!==''){S.i=+v;save();render()}};
   $('#zero').onclick=()=>{it.cases='0';it.loose='0';save();go(1)};
   $('#skip').onclick=()=>{it.skip=true;save();go(1)};
   $('#next').onclick=()=>go(1);$('#prev').onclick=()=>go(-1);
@@ -197,7 +213,7 @@ function talk(){
   <h1>Talk to count</h1>
   <p class="mute">Say the product, then the numbers. Examples: "Messorem Get Wavy, 2 cases, 5 loose" · "Heineken 12" · "deux caisses cinq unités Mortalité". A number with no word after it counts as units. Each time you talk, the count is <b>added</b> to what's already there.</p>
   <div class="bar"><button id="mic" style="width:100%;padding:24px;font-size:20px">🎤 Tap and talk</button></div>
-  <input class="txt" id="typed" placeholder="…or type it here and press Enter">
+  <div class="bar"><input class="txt" id="typed" placeholder="…or use the keyboard 🎤 / type here" style="flex:1"><button id="addtyped">Add</button></div>
   <div id="heard" class="card" style="display:none"></div>
   <h3>Added this session</h3><div id="log"></div>`;
   const drawLog=()=>{$('#log').innerHTML=talkLog.length?talkLog.slice(0,15).map((e,k)=>{const it=S.items[e.i];return`<div class="li"><span>${esc(it.name)}<br><span class="mute">“${esc(e.text)}” → ${e.p.cases!=null?e.p.cases+' case(s) ':''}${e.p.loose!=null?e.p.loose+' unit(s)':''}</span></span><button class="alt" data-u="${k}">Undo</button></div>`}).join(''):'<p class="mute">Nothing yet.</p>';
@@ -210,15 +226,18 @@ function talk(){
     H.innerHTML=`<b>Heard:</b> “${esc(text)}” → ${p.cases!=null?p.cases+' case(s) ':''}${p.loose!=null?p.loose+' unit(s)':''}<br><span class="mute">Which product? Tap the right one:</span>`+m.map(c=>`<button class="alt" style="display:block;width:100%;text-align:left;margin:6px 0" data-c="${c.i}">${esc(S.items[c.i].name)}${S.items[c.i].sec?' <span class=mute>· '+esc(S.items[c.i].sec)+'</span>':''}</button>`).join('');
     H.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{applyTalk(+b.dataset.c,p,text);H.innerHTML=`✅ <b>${esc(S.items[+b.dataset.c].name)}</b>`;drawLog()})};
   $('#typed').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()){handle(e.target.value.trim());e.target.value=''}};
+  $('#addtyped').onclick=()=>{const v=$('#typed').value.trim();if(v){handle(v);$('#typed').value=''}};
   $('#back').onclick=()=>{S.view='count';render()};
   $('#lang').onclick=()=>{lang=lang==='fr'?'en':'fr';talk()};
   $('#mic').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){alert('This phone/browser has no speech recognition. Type it instead.');return}
     if(rec){try{rec.stop()}catch(e){}}
-    rec=new SR();rec.lang=lang==='fr'?'fr-CA':'en-CA';rec.interimResults=false;rec.maxAlternatives=1;
+    rec=new SR();rec.lang=lang==='fr'?'fr-CA':'en-US';rec.interimResults=false;rec.maxAlternatives=1;
     $('#mic').textContent='🔴 Listening… (tap again to stop)';
     rec.onresult=e=>handle(e.results[0][0].transcript);
-    rec.onerror=e=>{$('#heard').style.display='block';$('#heard').innerHTML='Mic problem: '+esc(e.error||'unknown')+'. Allow the microphone for this page, or type it instead.'};
+    rec.onerror=e=>{const H=$('#heard');H.style.display='block';const c=e.error||'unknown';
+      const help={'not-allowed':'The mic is blocked. On the iPad: <b>Settings → Safari → Microphone → Allow</b> (or tap <b>aA</b> in the address bar → Website Settings → Microphone → Allow). Also turn on <b>Settings → General → Keyboard → Enable Dictation</b>.','service-not-allowed':'Dictation is switched off on this device. Go to <b>Settings → General → Keyboard → Enable Dictation</b>. (A work iPad may have it locked by your company.)','language-not-supported':'This language is not available. Tap the Language button to switch.','no-speech':'I did not hear anything. Tap the mic and talk right away.','audio-capture':'No microphone found.','network':'No internet for speech. Check Wi‑Fi.'}[c]||('Mic problem: '+esc(c));
+      H.innerHTML='<b>🎤 '+help+'</b><br><span class="mute">You can still use the <b>🎤 key on the iPad keyboard</b> in the box below — tap the box, tap that little mic, talk, then press <b>Add</b>.</span>'};
     rec.onend=()=>{const m=$('#mic');if(m)m.textContent='🎤 Tap and talk'};
     rec.start()};
   drawLog();
@@ -230,13 +249,13 @@ function render(){({setup,count,list,done,talk})[S.view]()}
     $('#app').innerHTML='<h1>Quick Count</h1><div class="card"><b>🔒 Unlocking your list…</b><p class="mute">This can take up to 20 seconds on an older iPad. Please wait.</p></div>';
     let msg='';
     try{
-      if(!(window.crypto&&crypto.subtle))throw new Error('This browser cannot unlock lists (no secure crypto). Page version 6.');
+      if(!(window.crypto&&crypto.subtle))throw new Error('This browser cannot unlock lists (no secure crypto). Page version 7.');
       const t=await unlockList(h);const it=parse(t);
       if(!it.length)throw new Error('The unlocked list was empty.');
       S.items=it;S.i=0;S.view='count';save();
     }catch(e){msg=(e&&e.message)||String(e)}
     render();
-    if(msg){const e=document.querySelector('#perr');if(e)e.textContent='Auto-unlock failed: '+msg+' (Page version 6). Type the passcode below instead.'}
+    if(msg){const e=document.querySelector('#perr');if(e)e.textContent='Auto-unlock failed: '+msg+' (Page version 7). Type the passcode below instead.'}
     return;
   }
   render()})();
