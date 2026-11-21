@@ -225,5 +225,7 @@ function talk(){
 }
 
 function render(){({setup,count,list,done,talk})[S.view]()}
-render();
+(async()=>{const h=(location.hash||'').replace(/^#/,'').trim();
+  if(h&&!S.items.length&&window.crypto&&crypto.subtle){try{const t=await unlockList(h);const it=parse(t);if(it.length){S.items=it;S.i=0;S.view='count';save()}}catch(e){}}
+  render()})();
 </script></body></html>
