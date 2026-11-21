@@ -226,6 +226,18 @@ function talk(){
 
 function render(){({setup,count,list,done,talk})[S.view]()}
 (async()=>{const h=(location.hash||'').replace(/^#/,'').trim();
-  if(h&&!S.items.length&&window.crypto&&crypto.subtle){try{const t=await unlockList(h);const it=parse(t);if(it.length){S.items=it;S.i=0;S.view='count';save()}}catch(e){}}
+  if(h&&!S.items.length){
+    $('#app').innerHTML='<h1>Quick Count</h1><div class="card"><b>🔒 Unlocking your list…</b><p class="mute">This can take up to 20 seconds on an older iPad. Please wait.</p></div>';
+    let msg='';
+    try{
+      if(!(window.crypto&&crypto.subtle))throw new Error('This browser cannot unlock lists (no secure crypto). Page version 6.');
+      const t=await unlockList(h);const it=parse(t);
+      if(!it.length)throw new Error('The unlocked list was empty.');
+      S.items=it;S.i=0;S.view='count';save();
+    }catch(e){msg=(e&&e.message)||String(e)}
+    render();
+    if(msg){const e=document.querySelector('#perr');if(e)e.textContent='Auto-unlock failed: '+msg+' (Page version 6). Type the passcode below instead.'}
+    return;
+  }
   render()})();
 </script></body></html>
